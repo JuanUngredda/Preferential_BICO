@@ -1,0 +1,5 @@
+#remove all pycache
+__pycache__/
+
+#remove all cython files
+*.pyc
