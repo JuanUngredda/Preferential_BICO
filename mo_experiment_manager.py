@@ -7,10 +7,10 @@ from itertools import product
 
 import torch
 
-from botorch.test_functions.multi_objective import C2DTLZ2, SRN , ConstrainedBraninCurrin
+from botorch.test_functions.multi_objective import BNH, SRN, CONSTR, ConstrainedBraninCurrin, C2DTLZ2, OSY, WeldedBeam
 from mo_config import CONFIG_DICT
 from optimizers.mo_optimizer import Optimizer
-from optimizers.utils import mo_acq_wrapper
+from optimizers.utils import mo_acq_wrapper, test_function_handler
 
 logger = logging.getLogger(__name__)
 
@@ -54,16 +54,30 @@ def run_experiment(
 
     # instantiate the test problem
     testfun_dict = {
+        "BNH": BNH,
+        "SRN": SRN,
+        "CONSTR": CONSTR,
+        "ConstrainedBraninCurrin": ConstrainedBraninCurrin,
         "C2DTLZ2": C2DTLZ2,
-        "ConstrainedBraninCurrin": ConstrainedBraninCurrin
+        "OSY": OSY,
+        "WeldedBeam": WeldedBeam
     }
 
     CONFIG_NUMBER_FANTASIES = CONFIG_DICT[experiment_name]["num_fantasies"]
     # TODO: Change objective function parametrisation to not be hard-coded
+    CONFIG_NUMBER_INPUT_DIM = CONFIG_DICT[experiment_name][
+        "input_dim"
+    ]
+    CONFIG_NUMBER_OUTPUT_DIM = CONFIG_DICT[experiment_name][
+        "output_dim"
+    ]
 
-    testfun = testfun_dict[problem](negate=True).to(
-        dtype=dtype
-    )
+    testfun = test_function_handler(test_fun_str=problem,
+                                    test_fun_dict=testfun_dict,
+                                    input_dim=CONFIG_NUMBER_INPUT_DIM,
+                                    output_dim=CONFIG_NUMBER_OUTPUT_DIM).to(dtype=dtype)
+
+
     dim = testfun.dim
     bounds = testfun.bounds  # Bounds tensor (2, d)
     lb, ub = bounds
@@ -101,17 +115,14 @@ def run_experiment(
         "num_max_evaluatations"
     ]
 
-    acquisition_function = mo_acq_wrapper(method=method, bounds=bounds_normalized,
+    acquisition_function = mo_acq_wrapper(method=method,
                                           utility_model_name=CONFIG_UTILITY_MODEL,
-                                          num_fantasies=CONFIG_NUMBER_FANTASIES,
-                                          num_objectives=testfun.num_objectives,
-                                          num_scalarizations=CONFIG_NUMBER_OF_SCALARIZATIONS,
-                                          num_discrete_points=CONFIG_NUMBER_DISCRETE_POINTS,
-                                          num_restarts=CONFIG_NUMBER_RESTARTS_INNER_OPT,
-                                          raw_samples=CONFIG_NUMBER_RAW_SAMPLES_INNER_OPT)
+                                          num_fantasies= CONFIG_NUMBER_FANTASIES)
     # instantiate the optimizer
+    acquisition_function_optimizer = Optimizer
 
-    optimizer = Optimizer(
+
+    optimizer = acquisition_function_optimizer(
         testfun=testfun,
         acquisitionfun=acquisition_function,
         utility_model_name=CONFIG_UTILITY_MODEL,
@@ -130,6 +141,7 @@ def run_experiment(
             "NUM_RESTARTS": CONFIG_NUMBER_RESTARTS_ACQ_OPT,
         },
     )
+
 
     # optmize the test problem
     optimizer.optimize()
@@ -182,19 +194,25 @@ def main(exp_names, seed):
 
     # run that badboy
     for idx, _ in enumerate(EXPERIMENTS):
-        run_experiment(
-            experiment_name=EXPERIMENT_NAME,
-            problem=EXPERIMENTS[idx][0],
-            method=EXPERIMENTS[idx][1],
-            utility_model_str=EXPERIMENTS[idx][2],
-            savefile=script_dir
-                     + "/results/"
-                     + EXPERIMENTS[idx][0]
-                     + "/"
-                     + EXPERIMENTS[idx][1] + "/"
-                     + EXPERIMENTS[idx][2],
-            base_seed=seed,
-        )
+
+        file_name = script_dir + "/results/" + EXPERIMENT_NAME + "/" + EXPERIMENTS[idx][0] + "/" + EXPERIMENTS[idx][
+            1] + "/" + EXPERIMENTS[idx][2] + "/" + str(seed) + ".pkl"
+
+        if os.path.isfile(file_name) == False:
+            run_experiment(
+                experiment_name=EXPERIMENT_NAME,
+                problem=EXPERIMENTS[idx][0],
+                method=EXPERIMENTS[idx][1],
+                utility_model_str=EXPERIMENTS[idx][2],
+                savefile=script_dir
+                         + "/results/" +
+                         EXPERIMENT_NAME + "/"
+                         + EXPERIMENTS[idx][0]
+                         + "/"
+                         + EXPERIMENTS[idx][1] + "/"
+                         + EXPERIMENTS[idx][2],
+                base_seed=seed,
+            )
 
 
 if __name__ == "__main__":

@@ -92,22 +92,24 @@ class BaseOptimizer(ABC):
         ).to(dtype =torch.double)
 
         # test initial
-        self.test()
-        logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
-        logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
-
+        # todo: Include the uncommended lines and eliminate weights
+        # self.test()
+        # logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
+        # logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
+        from botorch.utils.sampling import sample_simplex
+        self.weights = sample_simplex(n=10, d=self.f.num_objectives, qmc=True).squeeze()
         # start iterating until the budget is exhausted.
         for _ in range(self.n_max - self.n_init):
 
             # collect next points
             x_new = self.get_next_point().to(dtype =torch.double)
+
+            raise
             y_new = self.evaluate_objective(x_new).to(dtype =torch.double)
-            c_new = self.evaluate_constraints(x_new)
 
             # update stored data
             self.x_train = torch.vstack([self.x_train, x_new.reshape(1, -1)])
             self.y_train = torch.vstack((self.y_train, y_new))
-            self.c_train = torch.vstack((self.c_train, c_new))
 
             logger.info(f"Running optim, n: {self.x_train.shape[0]}")
 

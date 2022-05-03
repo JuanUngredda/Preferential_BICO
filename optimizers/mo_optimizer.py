@@ -8,19 +8,17 @@ from botorch.models import SingleTaskGP
 from botorch.models.model_list_gp_regression import ModelListGP
 from botorch.models.transforms.outcome import Standardize
 from botorch.utils.multi_objective.scalarization import (
-    get_chebyshev_scalarization,
-    get_linear_scalarization,
+    get_chebyshev_scalarization
 )
+from botorch.models import FixedNoiseGP, SingleTaskGP
 from botorch.utils.sampling import sample_simplex
 from botorch.utils.transforms import unnormalize, normalize
 from gpytorch.kernels import RBFKernel, ScaleKernel
 from gpytorch.mlls.sum_marginal_log_likelihood import SumMarginalLogLikelihood
 from torch import Tensor
 from botorch.utils import standardize
-
+from optimizers.utils import timeit
 from .basebooptimizer import BaseBOOptimizer
-from .utils import timeit, ParetoFrontApproximation, _compute_expected_utility
-
 
 class Optimizer(BaseBOOptimizer):
     def __init__(
@@ -70,8 +68,7 @@ class Optimizer(BaseBOOptimizer):
         if utility_model_name == "Tche":
             self.utility_model = get_chebyshev_scalarization
 
-        elif utility_model_name == "Lin":
-            self.utility_model = get_linear_scalarization
+
 
     @timeit
     def evaluate_objective(self, x: Tensor, **kwargs) -> Tensor:
@@ -86,19 +83,28 @@ class Optimizer(BaseBOOptimizer):
         constraints = -self.f.evaluate_slack(x)
         return constraints
 
-    def _update_model(self, X_train: Tensor, Y_train: Tensor, C_train: Tensor):
+    def _update_model(self, X_train: Tensor, Y_train: Tensor):
 
         Y_train_standarized = standardize(Y_train)
-        train_joint_YC = torch.cat([Y_train_standarized, C_train], dim=-1)
 
-        models = []
-        for i in range(train_joint_YC.shape[-1]):
-            models.append(
-                SingleTaskGP(X_train, train_joint_YC[..., i : i + 1])
-            )
-        self.model = ModelListGP(*models)
-        mll = SumMarginalLogLikelihood(self.model.likelihood, self.model)
-        fit_gpytorch_model(mll)
+        NOISE_VAR = torch.Tensor([1e-4])
+        while True:
+            try:
+                models = []
+
+                for i in range(Y_train_standarized.shape[-1]):
+                    models.append(
+                        FixedNoiseGP(X_train, Y_train_standarized[..., i : i + 1], train_Yvar=NOISE_VAR.expand_as(Y_train_standarized[..., i : i + 1])
+                                     )
+                    )
+                self.model = ModelListGP(*models)
+                mll = SumMarginalLogLikelihood(self.model.likelihood, self.model)
+                fit_gpytorch_model(mll)
+                break
+            except:
+                print("update model: increased assumed fixed noise term")
+                NOISE_VAR *= 10
+                print("original noise var:", 1e-4, "updated noisevar:", NOISE_VAR)
 
 
     def policy(self, num_scalarizations:int):
@@ -137,11 +143,14 @@ class Optimizer(BaseBOOptimizer):
         return X_pareto_solutions, weights
 
     def get_next_point(self):
-        self._update_model(X_train=self.x_train, Y_train=self.y_train, C_train=self.c_train)
-        acquisition_function = self.acquisition_fun(self.model)
+        self._update_model(X_train=self.x_train, Y_train=self.y_train)
+        acquisition_function = self.acquisition_fun(model=self.model,
+                                                    weights=self.weights,
+                                                    Y_sampled=self.y_train)
         x_new = self._sgd_optimize_aqc_fun(
             acquisition_function, log_time=self.method_time
         )
+        raise
         return x_new
 
     def save(self):

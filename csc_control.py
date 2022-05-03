@@ -5,6 +5,7 @@ import sys
 
 import numpy as np
 
+
 # This is a bare script that receives args, prints something, wastes some time,function_caller_test_func_2_TS
 # and saves something. Use this as a blank template to run experiments.
 # The sys.argv = [demo_infra_usage.py (time_stamped_folder) (integer)]
@@ -42,17 +43,22 @@ def run(args):
     hostname = sp.check_output(["hostname"], shell=True).decode()[:-1]
 
     # IMPORT AND RUN MODULES
-    import mo_experiment_manager
+    import mo_experiment_manager  # monte_carlo_convergence_experiment_manager
+    from forking_CSC.fork0_to_csc import U
 
-    experiment_names = ["BraninCurrin_experiments"]
-    for exp_name in experiment_names:
-        mo_experiment_manager.main(exp_names=exp_name, seed=args.k)
+    number_of_csc_machines = len(U)
+    # print(number_of_csc_machines)
+    seed = 0
+    while True:
+        experiment_names = ["BNH_experiments"]
+        for exp_name in experiment_names:
 
-    # experiment_manager(args.k)
+            if args.k + seed > 29:
+                raise
 
-    # save something to hard drive in /res/ subfolder
-    # with open(this_job_savefile, "w") as f:
-    #     f.write(output + "\n\n")
+            mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
+            # print(args.k + seed, exp_name)
+        seed += number_of_csc_machines
 
     # end of demo
     print("\nOutput saved to file: ", this_job_savefile, "\n\n\n\n")
