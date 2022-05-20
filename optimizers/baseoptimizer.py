@@ -89,6 +89,7 @@ class BaseOptimizer(ABC):
         self.y_train_option_1 = torch.zeros((0, self.dim))
         self.y_train_option_2 = torch.zeros((0, self.dim))
         self.index_pairs_sampled = []
+        self.decisions = []
 
         self.x_train = lhc(n=self.n_init, dim=self.dim).to(dtype=torch.double)
         self.y_train = torch.vstack(
@@ -109,14 +110,14 @@ class BaseOptimizer(ABC):
 
             import time
             # collect next points
-            ts = time.time()
+            # ts = time.time()
             x_new, voi_sim = self.get_next_point_simulator()
-            te = time.time()
-            print("time sim acq", te-ts)
-            ts= time.time()
+            # te = time.time()
+            # print("time sim acq", te-ts)
+            # ts= time.time()
             pair_new_idx, pair_new, voi_dm = self.get_next_point_decision_maker()
-            te = time.time()
-            print("time dm acq", te - ts, "true param", self.true_parameter )
+            # te = time.time()
+            # print("time dm acq", te - ts, "true param", self.true_parameter )
             print("x_new, voi_sim",x_new, voi_sim)
             print("pair_new, voi_dm",pair_new_idx, voi_dm)
             # if voi simulator greater than dm then query simulator. Otherwise query the decision maker
@@ -128,6 +129,7 @@ class BaseOptimizer(ABC):
                 # update stored data
                 self.x_train = torch.vstack([self.x_train, x_new.reshape(1, -1)])
                 self.y_train = torch.vstack((self.y_train, y_new))
+                self.decisions.append(1)
             else:
                 num_dm += 1
                 y_1, y_2 = pair_new
@@ -137,6 +139,7 @@ class BaseOptimizer(ABC):
                 self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
                 self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
                 self.index_pairs_sampled.append(pair_new_idx)
+                self.decisions.append(0)
 
             print("num_sim", num_sim, "num_dm", num_dm)
             logger.info(f"Running optim, n: {self.x_train.shape[0] + len(self.index_pairs_sampled)}")

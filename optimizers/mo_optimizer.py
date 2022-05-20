@@ -233,6 +233,7 @@ class Optimizer(BaseBOOptimizer):
             acquisition_function, log_time=self.method_time
         )
 
+        voi_val = torch.clamp(voi_val, 1e-9)
         return x_new, voi_val
 
     def get_next_point_decision_maker(self) -> tuple[Tensor, list[Tensor, Tensor], Tensor]:
@@ -300,10 +301,10 @@ class Optimizer(BaseBOOptimizer):
 
             self.weights = weights[:self.num_scalarisations, :]
 
-            import matplotlib.pyplot as plt
-            plt.hist(weights[:, 0])
-            plt.xlim(torch.min(weights[:, 0]), torch.max(weights[:, 0]))
-            plt.show()
+            # import matplotlib.pyplot as plt
+            # plt.hist(weights[:, 0])
+            # plt.xlim(torch.min(weights[:, 0]), torch.max(weights[:, 0]))
+            # plt.show()
             # raise
 
     def save(self):
@@ -330,6 +331,7 @@ class Optimizer(BaseBOOptimizer):
             "OC_sampled": self.sampled_performance,
             "x": self.x_train,
             "y": self.y_train,
+            "decisions": self.decisions,
             "weights": self.weights,
             "kernel": self.kernel_name,
             "gp_lik_noise": self.gp_likelihood_noise,

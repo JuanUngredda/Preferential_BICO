@@ -8,6 +8,7 @@ from itertools import product
 import torch
 
 from botorch.test_functions.multi_objective import BNH, SRN, CONSTR, ConstrainedBraninCurrin, C2DTLZ2, OSY, WeldedBeam
+from optimizers.objective_functions.multi_objective_test_function import Spherical
 from mo_config import CONFIG_DICT
 from optimizers.mo_optimizer import Optimizer
 from optimizers.utils import mo_acq_wrapper, test_function_handler
@@ -57,6 +58,7 @@ def run_experiment(
         "BNH": BNH,
         "SRN": SRN,
         "CONSTR": CONSTR,
+        "Spherical": Spherical,
         "ConstrainedBraninCurrin": ConstrainedBraninCurrin,
         "C2DTLZ2": C2DTLZ2,
         "OSY": OSY,
@@ -72,8 +74,13 @@ def run_experiment(
         "output_dim"
     ]
 
+    CONFIG_SHIFT_PARAMETER = CONFIG_DICT[experiment_name][
+        "shift_parameter"
+    ]
+
     testfun = test_function_handler(test_fun_str=problem,
                                     test_fun_dict=testfun_dict,
+                                    shift_parameter = CONFIG_SHIFT_PARAMETER,
                                     input_dim=CONFIG_NUMBER_INPUT_DIM,
                                     output_dim=CONFIG_NUMBER_OUTPUT_DIM).to(dtype=dtype)
 
@@ -155,6 +162,7 @@ def run_experiment(
         "number_of_restarts_acq_optimizer": CONFIG_NUMBER_RESTARTS_ACQ_OPT,
         "number_of_raw_samples_acq_optimizer": CONFIG_NUMBER_RAW_SAMPLES_ACQ_OPT,
         "base_seed": base_seed,
+        "decisions":optimizer.decisions,
         "acquisition_optimizer": CONFIG_ACQ_OPTIMIZER,
         "kernel": optimizer.kernel_name,
         "gp_lik_noise": optimizer.gp_likelihood_noise,

@@ -50,3 +50,28 @@ class Spherical(MultiObjectiveTestProblem):
             f_i = torch.sum(X_obj_i**2, dim=-1)
             fs.append(f_i)
         return torch.stack(fs, dim=-1)
+#
+# dim =2
+# out = 2
+# testfun = Spherical(dim=dim,
+#                     num_objectives=out,
+#                     shift_factor=0.01,
+#                     negate = True)
+#
+#
+# X = torch.rand((10000, dim))
+# fvals = testfun(X)
+# print(fvals.shape)
+# import matplotlib.pyplot as plt
+# # for i in range(out):
+# #
+# #     plt.scatter(X[:,0],X[:,1], c= fvals[:,i])
+# #     plt.show()
+#
+# plt.scatter(fvals[:,0], fvals[:,1])
+# plt.show()
+
+# tensor_a = torch.tensor([1 , -1])
+# combinations = torch.combinations(torch.tensor([1 , -1]), r=dim, with_replacement=True)
+# # combinations =torch.cartesian_prod(tensor_a)
+# print("comb", combinations)

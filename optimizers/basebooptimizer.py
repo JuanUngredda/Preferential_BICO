@@ -109,62 +109,62 @@ class BaseBOOptimizer(BaseOptimizer):
         #                         bounds=bounds_normalized,
         #                         x_current_best=self.x_recommended)
 
-        with torch.no_grad():
-            X_random_initial_conditions_raw = torch.rand((1000, 1, self.dim))
-
-            X_initial_conditions_raw = X_random_initial_conditions_raw
-
-            from .acquisition_functions.VoI_simulator import ExpectedPosteriorMean
-            expected_posterior_mean_objective = ExpectedPosteriorMean(model=self.model,
-                                                                      objective=acq_fun.objective)
-            print("x_best", self.x_recommended)
-            print("OBJECTIVE ACQ VALUE ", expected_posterior_mean_objective(self.x_recommended))
-            x_train_posterior_mean = expected_posterior_mean_objective.forward(X_initial_conditions_raw).squeeze()
-
-            import matplotlib.pyplot as plt
-            plt.scatter(X_initial_conditions_raw[:, 0, 0], X_initial_conditions_raw[:, 0, 1], c=x_train_posterior_mean)
-            plt.scatter(self.x_train.numpy()[:, 0], self.x_train.numpy()[:, 1], color="red", label="sampled points")
-
-            plt.scatter(
-                x_best.numpy()[:, 0],
-                x_best.numpy()[:, 1],
-                color="black",
-                label="one-shot kg $x^{*}$",
-                marker="^",
-            )
-
-            plt.scatter(
-                self.x_recommended[:, 0],
-                self.x_recommended[:, 1],
-                color="red",
-                label="x recommended$",
-                marker="^",
-            )
-            plt.title("Design Space")
-            plt.show()
-
-
-            posterior = self.model.posterior(X=X_initial_conditions_raw)
-            posterior_mean = posterior.mean.squeeze().detach()
-
-            posterior_best = self.model.posterior(X=x_best)
-            posterior_best_mean = posterior_best.mean.detach()
-
-            posterior_best_recommended = self.model.posterior(X=self.x_recommended)
-            posterior_best_recommended_mean = posterior_best_recommended.mean.detach()
-            plt.title("Objective Space")
-            plt.scatter(posterior_mean[:, 0], posterior_mean[:, 1], c=x_train_posterior_mean)
-            plt.scatter(posterior_best_mean.numpy()[:, 0],
-                        posterior_best_mean.numpy()[:, 1], color="black",
-                        label="one-shot kg $x^{*}$",
-                        marker="^",
-                        )
-            plt.scatter(posterior_best_recommended_mean[:, 0],
-                        posterior_best_recommended_mean[:, 1], color="red",
-                        label="best posterior mean",
-                        marker="x",
-                        )
-            plt.show()
+        # with torch.no_grad():
+        #     X_random_initial_conditions_raw = torch.rand((1000, 1, self.dim))
+        #
+        #     X_initial_conditions_raw = X_random_initial_conditions_raw
+        #
+        #     from .acquisition_functions.VoI_simulator import ExpectedPosteriorMean
+        #     expected_posterior_mean_objective = ExpectedPosteriorMean(model=self.model,
+        #                                                               objective=acq_fun.objective)
+        #     print("x_best", self.x_recommended)
+        #     print("OBJECTIVE ACQ VALUE ", expected_posterior_mean_objective(self.x_recommended))
+        #     x_train_posterior_mean = expected_posterior_mean_objective.forward(X_initial_conditions_raw).squeeze()
+        #
+        #     import matplotlib.pyplot as plt
+        #     plt.scatter(X_initial_conditions_raw[:, 0, 0], X_initial_conditions_raw[:, 0, 1], c=x_train_posterior_mean)
+        #     plt.scatter(self.x_train.numpy()[:, 0], self.x_train.numpy()[:, 1], color="red", label="sampled points")
+        #
+        #     plt.scatter(
+        #         x_best.numpy()[:, 0],
+        #         x_best.numpy()[:, 1],
+        #         color="black",
+        #         label="one-shot kg $x^{*}$",
+        #         marker="^",
+        #     )
+        #
+        #     plt.scatter(
+        #         self.x_recommended[:, 0],
+        #         self.x_recommended[:, 1],
+        #         color="red",
+        #         label="x recommended$",
+        #         marker="^",
+        #     )
+        #     plt.title("Design Space")
+        #     plt.show()
+        #
+        #
+        #     posterior = self.model.posterior(X=X_initial_conditions_raw)
+        #     posterior_mean = posterior.mean.squeeze().detach()
+        #
+        #     posterior_best = self.model.posterior(X=x_best)
+        #     posterior_best_mean = posterior_best.mean.detach()
+        #
+        #     posterior_best_recommended = self.model.posterior(X=self.x_recommended)
+        #     posterior_best_recommended_mean = posterior_best_recommended.mean.detach()
+        #     plt.title("Objective Space")
+        #     plt.scatter(posterior_mean[:, 0], posterior_mean[:, 1], c=x_train_posterior_mean)
+        #     plt.scatter(posterior_best_mean.numpy()[:, 0],
+        #                 posterior_best_mean.numpy()[:, 1], color="black",
+        #                 label="one-shot kg $x^{*}$",
+        #                 marker="^",
+        #                 )
+        #     plt.scatter(posterior_best_recommended_mean[:, 0],
+        #                 posterior_best_recommended_mean[:, 1], color="red",
+        #                 label="best posterior mean",
+        #                 marker="x",
+        #                 )
+        #     plt.show()
         # raise
         return x_best.squeeze(dim=-2).detach(), x_best_value
 

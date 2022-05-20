@@ -84,10 +84,17 @@ def timeit(method):
 def test_function_handler(test_fun_str: str,
                           test_fun_dict: dict,
                           input_dim: int,
-                          output_dim: int):
+                          output_dim: int,
+                          shift_parameter: Optional[float]=0.0):
+
     if test_fun_str == "C2DTLZ2":
         synthetic_fun = test_fun_dict[test_fun_str](dim=input_dim,
                                                     num_objectives=output_dim,
+                                                    negate=True)
+    elif test_fun_str == "Spherical":
+        synthetic_fun = test_fun_dict[test_fun_str](dim=input_dim,
+                                                    num_objectives=output_dim,
+                                                    shift_factor= shift_parameter,
                                                     negate=True)
     else:
 

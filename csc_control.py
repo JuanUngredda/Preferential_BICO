@@ -52,10 +52,12 @@ def run():#args):
     # print(number_of_csc_machines)
     seed = 0
     while True:
-        experiment_names = ["BNH_experiments"]
+        experiment_names = ["Spherical_0.01_experiments",
+                            "Spherical_0.1_experiments",
+                            "Spherical_0.3_experiments"]
         for exp_name in experiment_names:
 
-            if 0 + seed > 29:
+            if 0 + seed > 99:
                 raise
             #todo change
             mo_experiment_manager.main(exp_names=exp_name, seed=0)#args.k + seed)
