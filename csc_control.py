@@ -17,8 +17,8 @@ import numpy as np
 #
 # see fork0_to_csc.py for further help.
 
-#todo change
-def run():#args):
+
+def run(args):
     """
     This is a stupid function just for demonstration purposes.
     It takes the args and prints something and saves something.
@@ -31,10 +31,10 @@ def run():#args):
     all_job_settings = np.random.uniform(size=(1000,))
 
     # use the args.k as a lookup into all_job_settings
-    # todo change
-    this_job_setting = all_job_settings[0]#all_job_settings[args.k]
 
-    this_job_savefile = "hello" + "/res/" + str(0)#args.dirname + "/res/" + str(args.k)
+    this_job_setting = all_job_settings[args.k]
+
+    this_job_savefile = args.dirname + "/res/" + str(args.k)
 
     # Now to run some code!
     # Let's print something, say the conda env, args, computer and job setting?
@@ -58,9 +58,7 @@ def run():#args):
         for exp_name in experiment_names:
 
             if 0 + seed > 99:
-                raise
-            #todo change
-            mo_experiment_manager.main(exp_names=exp_name, seed=0)#args.k + seed)
+                mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
             # print(args.k + seed, exp_name)
         seed += number_of_csc_machines
 
@@ -79,20 +77,19 @@ if __name__ == "__main__":
     ####################################### WARNING ####################################
     # ALL EXPERIMENT RUNNERS MUST HAVE THE FOLLOWING ARGS!!!! DO NOT CHANGE THIS!!!!
     ####################################### WARNING ####################################
-    #todo change
 
-    # parser = argparse.ArgumentParser(
-    #     description="Run k-th experiment from the look-up table"
-    # )
-    # parser.add_argument("dirname", type=str, help="Experiment directory")
-    # parser.add_argument(
-    #     "k", type=int, help="Row in look-up table corresponding to specific experiment"
-    # )
+    parser = argparse.ArgumentParser(
+        description="Run k-th experiment from the look-up table"
+    )
+    parser.add_argument("dirname", type=str, help="Experiment directory")
+    parser.add_argument(
+        "k", type=int, help="Row in look-up table corresponding to specific experiment"
+    )
 
     # These arguments are assumed by the forking files. Use args.dirname+"/res/" as a results output directory.
     # In this file, define a list of aaallll the experiments you want to run and use args.k as a lookup index
     # within the list. Save the output as args.dirname+"/res/" + str(args.k) (the /res/ folder has been made already)
-    # todo change
-    # args = parser.parse_args()
 
-    run()#args)
+    args = parser.parse_args()
+
+    run(args)
