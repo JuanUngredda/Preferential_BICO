@@ -57,8 +57,10 @@ def run(args):
                             "Spherical_0.3_experiments"]
         for exp_name in experiment_names:
 
-            if 0 + seed > 99:
-                mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
+            if args.k + seed > 99:
+                raise
+
+            mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
             # print(args.k + seed, exp_name)
         seed += number_of_csc_machines
 
