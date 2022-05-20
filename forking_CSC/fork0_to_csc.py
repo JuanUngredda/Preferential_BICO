@@ -121,6 +121,7 @@ ALL_CSC_NAMES = [
     "keiko",
     "kumeta",
     "kaluga",
+    "kalocsa",
     "het1",
     "het2",
     "het3",
@@ -131,9 +132,9 @@ ALL_CSC_NAMES = [
 # working with names is a bitch, instead use numbers (tmux panes).
 # U = [0]
 # U = [0,2,3,4,5,6,7,8]
-# python fork0_to_csc.py /home/rawsys/matjiu/BOPL_Cornell-Warwick/experiments/control.py 14 --first_fork kumeta --basedir /home/rawsys/matjiu/RESULTS_BOPL --conda BOPL
+# python fork0_to_csc.py /home/rawsys/matjiu/Preferential_BICO/csc_control.py 9 --first_fork kumeta --basedir /home/rawsys/matjiu/RESULTS_Preferential_BICO --conda Preferential_BICO
 
-U = range(len(ALL_CSC_NAMES))#[3, 4, 5, 8, 9, 10, 11]
+U = [0,1,2,3,4,5,6,7,8]#range(len(ALL_CSC_NAMES))#[3, 4, 5, 8, 9, 10, 11]
 
 CSC_NAMES = [ALL_CSC_NAMES[i] for i in U]
 
