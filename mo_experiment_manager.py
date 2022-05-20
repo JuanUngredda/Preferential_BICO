@@ -77,7 +77,6 @@ def run_experiment(
                                     input_dim=CONFIG_NUMBER_INPUT_DIM,
                                     output_dim=CONFIG_NUMBER_OUTPUT_DIM).to(dtype=dtype)
 
-
     dim = testfun.dim
     bounds = testfun.bounds  # Bounds tensor (2, d)
     lb, ub = bounds
@@ -116,16 +115,15 @@ def run_experiment(
     ]
 
     acquisition_function, recommender_function = mo_acq_wrapper(method=method,
-                                          utility_model_name=CONFIG_UTILITY_MODEL,
-                                          num_fantasies= CONFIG_NUMBER_FANTASIES)
+                                                                utility_model_name=CONFIG_UTILITY_MODEL,
+                                                                num_fantasies=CONFIG_NUMBER_FANTASIES)
     # instantiate the optimizer
     acquisition_function_optimizer = Optimizer
-
 
     optimizer = acquisition_function_optimizer(
         testfun=testfun,
         acquisitionfun=acquisition_function,
-        recommenderfun= recommender_function,
+        recommenderfun=recommender_function,
         utility_model_name=CONFIG_UTILITY_MODEL,
         num_scalarizations=CONFIG_NUMBER_OF_SCALARIZATIONS,
         lb=lb,
@@ -142,7 +140,6 @@ def run_experiment(
             "NUM_RESTARTS": CONFIG_NUMBER_RESTARTS_ACQ_OPT,
         },
     )
-
 
     # optmize the test problem
     optimizer.optimize()
