@@ -137,7 +137,7 @@ class Optimizer(BaseBOOptimizer):
 
         return argmax_pmean
 
-    def get_next_point(self):
+    def get_next_point_simulator(self):
         self._update_model(self.x_train, self.y_train)
         acquisition_function = self.acquisition_fun(self.model)
         x_new = self._sgd_optimize_aqc_fun(

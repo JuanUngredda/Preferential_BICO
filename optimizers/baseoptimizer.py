@@ -6,6 +6,7 @@ import torch
 from torch import Tensor
 
 from .utils import lhc
+from botorch.utils.sampling import sample_simplex
 
 LOG_FORMAT = (
     "%(asctime)s - %(name)s:%(funcName)s:%(lineno)s - %(levelname)s:  %(message)s"
@@ -36,13 +37,13 @@ class BaseOptimizer(ABC):
     """
 
     def __init__(
-        self,
-        fun,
-        lb: Tensor,
-        ub: Tensor,
-        n_max: int,
-        n_init: int = 20,
-        ns0: int = None,
+            self,
+            fun,
+            lb: Tensor,
+            ub: Tensor,
+            n_max: int,
+            n_init: int = 20,
+            ns0: int = None,
     ):
         """
         ARGS:
@@ -83,35 +84,62 @@ class BaseOptimizer(ABC):
         logger.info(f"Starting optim, n_init: {self.n_init}")
 
         # initial random dataset
-        self.x_train = lhc(n=self.n_init, dim=self.dim).to(dtype =torch.double)
+        # todo: allow for initial random pairs sampling
+
+        self.y_train_option_1 = torch.zeros((0, self.dim))
+        self.y_train_option_2 = torch.zeros((0, self.dim))
+        self.index_pairs_sampled = []
+
+        self.x_train = lhc(n=self.n_init, dim=self.dim).to(dtype=torch.double)
         self.y_train = torch.vstack(
             [self.evaluate_objective(x_i) for x_i in self.x_train]
-        ).to(dtype =torch.double)
-        self.c_train = torch.vstack(
-            [self.evaluate_constraints(x_i) for x_i in self.x_train]
-        ).to(dtype =torch.double)
+        ).to(dtype=torch.double)
 
-        # test initial
-        # todo: Include the uncommended lines and eliminate weights
-        # self.test()
-        # logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
-        # logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
-        from botorch.utils.sampling import sample_simplex
-        self.weights = sample_simplex(n=10, d=self.f.num_objectives, qmc=True).squeeze()
+        self._update_model(
+            X_train=self.x_train, Y_train=self.y_train)
+        self._update_preference_model()
+        self.test()
+        logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
+        logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
+
+        num_sim = 0
+        num_dm = 0
         # start iterating until the budget is exhausted.
         for _ in range(self.n_max - self.n_init):
 
+            import time
             # collect next points
-            x_new = self.get_next_point().to(dtype =torch.double)
+            ts = time.time()
+            x_new, voi_sim = self.get_next_point_simulator()
+            te = time.time()
+            print("time sim acq", te-ts)
+            ts= time.time()
+            pair_new_idx, pair_new, voi_dm = self.get_next_point_decision_maker()
+            te = time.time()
+            print("time dm acq", te - ts, "true param", self.true_parameter )
+            print("x_new, voi_sim",x_new, voi_sim)
+            print("pair_new, voi_dm",pair_new_idx, voi_dm)
+            # if voi simulator greater than dm then query simulator. Otherwise query the decision maker
+            if voi_dm <= voi_sim:
+                num_sim +=1
+                x_new = x_new.to(dtype=torch.double)
+                y_new = self.evaluate_objective(x_new).to(dtype=torch.double)
 
-            raise
-            y_new = self.evaluate_objective(x_new).to(dtype =torch.double)
+                # update stored data
+                self.x_train = torch.vstack([self.x_train, x_new.reshape(1, -1)])
+                self.y_train = torch.vstack((self.y_train, y_new))
+            else:
+                num_dm += 1
+                y_1, y_2 = pair_new
+                y_winner, y_loser = self.evaluate_decision_maker(option_1=y_1,
+                                                     option_2=y_2)
 
-            # update stored data
-            self.x_train = torch.vstack([self.x_train, x_new.reshape(1, -1)])
-            self.y_train = torch.vstack((self.y_train, y_new))
+                self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
+                self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
+                self.index_pairs_sampled.append(pair_new_idx)
 
-            logger.info(f"Running optim, n: {self.x_train.shape[0]}")
+            print("num_sim", num_sim, "num_dm", num_dm)
+            logger.info(f"Running optim, n: {self.x_train.shape[0] + len(self.index_pairs_sampled)}")
 
             # test if necessary
             if torch.any(len(self.y_train) == self.testable_iters):
@@ -124,15 +152,22 @@ class BaseOptimizer(ABC):
         evaluate objective function f(x)
         """
 
-    def evaluate_constraints(self, x: Tensor, **kwargs) -> Tensor:
+    def evaluate_decision_maker(self, option_1: Tensor,
+                                option_2: Tensor, **kwargs) -> Tensor:
         """
-        evaluate constraint function c(x)
+        "Returns the decision maker preference given two distinct options"
         """
 
     @abstractmethod
-    def get_next_point(self):
+    def get_next_point_simulator(self):
         """
         return next (x) point.
+        """
+
+    @abstractmethod
+    def get_next_point_decision_maker(self):
+        """
+        return next pair of y point.
         """
 
     @abstractmethod
@@ -143,7 +178,7 @@ class BaseOptimizer(ABC):
 
     def save(self):
         """
-        saves intermidiate results in directory.
+        saves intermediate results in directory.
         """
 
     def test(self):

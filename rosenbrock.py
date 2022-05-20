@@ -2,12 +2,7 @@ import time
 
 import matplotlib.pyplot as plt
 import torch
-from botorch.acquisition import (
-    qKnowledgeGradient,
-    HybridKnowledgeGradient,
-    DiscreteKnowledgeGradient,
-    MCKnowledgeGradient,
-)
+
 from botorch.fit import fit_gpytorch_model
 from botorch.generation import get_best_candidates, gen_candidates_torch
 from botorch.models import SingleTaskGP
@@ -18,6 +13,8 @@ from botorch.utils import standardize
 from botorch.utils.sampling import manual_seed
 from botorch.utils.transforms import unnormalize
 from gpytorch.mlls import ExactMarginalLogLikelihood
+
+
 
 fun = Rosenbrock(dim=2, negate=True)
 fun.bounds[0, :].fill_(-5)

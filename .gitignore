@@ -1,5 +1,6 @@
 #remove all pycache
 __pycache__/
 
+.idea/
 #remove all cython files
 *.pyc

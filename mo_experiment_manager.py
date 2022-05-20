@@ -115,7 +115,7 @@ def run_experiment(
         "num_max_evaluatations"
     ]
 
-    acquisition_function = mo_acq_wrapper(method=method,
+    acquisition_function, recommender_function = mo_acq_wrapper(method=method,
                                           utility_model_name=CONFIG_UTILITY_MODEL,
                                           num_fantasies= CONFIG_NUMBER_FANTASIES)
     # instantiate the optimizer
@@ -125,6 +125,7 @@ def run_experiment(
     optimizer = acquisition_function_optimizer(
         testfun=testfun,
         acquisitionfun=acquisition_function,
+        recommenderfun= recommender_function,
         utility_model_name=CONFIG_UTILITY_MODEL,
         num_scalarizations=CONFIG_NUMBER_OF_SCALARIZATIONS,
         lb=lb,
@@ -166,8 +167,6 @@ def run_experiment(
         "OC_sampled": optimizer.sampled_performance,
         "x": optimizer.x_train,
         "y": optimizer.y_train,
-        "c": optimizer.c_train,
-        "x_front_recommended": optimizer.pareto_set_recommended,
         "weights": optimizer.weights,
         "cwd": os.getcwd(),
         "savefile": savefile,

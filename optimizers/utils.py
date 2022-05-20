@@ -6,6 +6,7 @@ from torch import Tensor
 
 from botorch.acquisition.analytic import AnalyticAcquisitionFunction, _construct_dist
 from optimizers.acquisition_functions.VoI_simulator import ValueOfInformationSimulator
+from optimizers.acquisition_functions.VoI_preferences import ValueOfInformationDecisionMaker
 from botorch.generation.gen import gen_candidates_scipy
 from botorch.models.model import Model
 from botorch.utils import standardize
@@ -16,6 +17,7 @@ from botorch.utils.multi_objective.scalarization import (
 )
 
 dtype = torch.double
+
 
 #################################################################
 #                                                               #
@@ -94,50 +96,53 @@ def test_function_handler(test_fun_str: str,
     return synthetic_fun
 
 
-
 def mo_acq_wrapper(
         method: str,
         utility_model_name=str,
         num_fantasies: Optional[int] = None
 ):
-    if utility_model_name == "Tche":
-        utility_model = get_chebyshev_scalarization
-
-
-
     def acquisition_function(model: method,
                              weights: Tensor,
-                             Y_sampled: Tensor):
-        if method == "Interactive":
-            voi_sim = ValueOfInformationSimulator(
-                model=model,
-                utility_model= utility_model,
-                num_fantasies=num_fantasies,
-                weights=weights,
-                Y_sampled=Y_sampled)
+                             Y_sampled: Tensor,
+                             utility_model: Callable,
+                             current_best_value: Tensor):
 
-            voi_dm = None
+        voi_sim = ValueOfInformationSimulator(
+            model=model,
+            utility_model=utility_model,
+            num_fantasies=num_fantasies,
+            weights=weights,
+            Y_sampled=Y_sampled,
+            x_best=current_best_value)
+        return voi_sim
 
-        elif method == "VoISim":
-            voi_sim = ValueOfInformationSimulator(
-                model=model,
-                utility_model= utility_model,
-                num_fantasies=num_fantasies,
-                weights=weights,
-                Y_sampled=Y_sampled)
+    def recommender_function(model: method,
+                             weights: Tensor,
+                             utility_model: Callable,
+                             bounds: Tensor,
+                             Y_sampled: Tensor,
+                             current_best_value: Tensor,
+                             optional: dict):
 
-            voi_dm = None
+        voi_dm = ValueOfInformationDecisionMaker(model=model,
+                                                 utility_model=utility_model,
+                                                 bounds=bounds,
+                                                 weights=weights,
+                                                 Y_sampled=Y_sampled,
+                                                 x_best=current_best_value,
+                                                 optional=optional)
+        return voi_dm
 
-        else:
-            raise Exception(
-                "method does not exist. Specify implemented method: DISCKG (Discrete KG), "
-                "MCKG (Monte Carlo KG), HYBRIDKG (Hybrid KG), and ONESHOTKG (One Shot KG)"
-            )
-        return voi_sim#,  voi_dm
+    if method == "Interactive":
 
-    return acquisition_function
+        return acquisition_function, recommender_function
 
+    elif method == "VoISim":
+        return acquisition_function, None
 
+    else:
+        print("Method Not Implement")
+        raise
 
 
 def _compute_expected_utility(
@@ -146,11 +151,10 @@ def _compute_expected_utility(
         c_values: Tensor,
         weights: Tensor,
 ) -> Tensor:
-
     utility = torch.zeros((weights.shape[0], y_values.shape[0]))
 
     for idx, w in enumerate(weights):
-        scalarization = scalatization_fun(weights=w, Y=torch.Tensor([]).view((0,y_values.shape[1])))
+        scalarization = scalatization_fun(weights=w, Y=torch.Tensor([]).view((0, y_values.shape[1])))
         utility_values = scalarization(y_values).squeeze()
         utility[idx, :] = utility_values
 

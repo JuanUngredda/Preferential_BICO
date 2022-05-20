@@ -16,7 +16,7 @@
 CONFIG_DICT = {
     "BNH_experiments": {
         "problems": ["BNH"],
-        "method": ["VoISim"],
+        "method": ["Interactive"],
         "output_dim": 2,
         "input_dim": 2,
         "number_of_scalarizations": 100,
@@ -24,12 +24,12 @@ CONFIG_DICT = {
         "num_max_evaluatations": 100,
         "utility_model": ["Tche"],
         "num_discrete_points": 3,
-        "num_fantasies": 128,
+        "num_fantasies": 20,
         "num_restarts_inner_optimizer": 1,
         "raw_samples_inner_optimizer": 100,
         "acquisition_optimizer":
             "Adam",  # "L-BFGS-B" or "Adam"
-        "num_restarts_acq_optimizer": 3,
-        "raw_samples_acq_optimizer": 1000,
+        "num_restarts_acq_optimizer": 2,
+        "raw_samples_acq_optimizer": 100,
     }
 }
