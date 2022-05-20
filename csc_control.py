@@ -57,7 +57,7 @@ def run(args):
                             "Spherical_0.3_experiments"]
         for exp_name in experiment_names:
 
-            if args.k + seed > 99:
+            if args.k + seed > 200:
                 raise
 
             mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
