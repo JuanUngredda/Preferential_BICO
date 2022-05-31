@@ -167,6 +167,7 @@ CONFIG_DICT = {
         "output_dim": 2,
         "input_dim": 2,
         "shift_parameter": 0.1,
+        "number_pairs": 0,
         "number_of_scalarizations": 30,
         "num_samples_initial_design": 6,
         "num_max_evaluatations": 30,
