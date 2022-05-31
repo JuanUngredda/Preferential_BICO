@@ -170,7 +170,7 @@ class BaseOptimizer(ABC):
                     self.test()
                     logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
                     logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
-        raise
+
 
     def evaluate_objective(self, x: Tensor, **kwargs) -> Tensor:
         """
