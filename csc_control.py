@@ -52,9 +52,15 @@ def run(args):
     # print(number_of_csc_machines)
     seed = 0
     while True:
-        experiment_names = ["Spherical_0.01_experiments",
-                            "Spherical_0.1_experiments",
-                            "Spherical_0.3_experiments"]
+        experiment_names = ["Spherical_0.01_Interactive_experiments",
+                            "Spherical_0.01_0_pair_experiments",
+                            "Spherical_0.01_3_pair_experiments",
+                            "Spherical_0.01_6_pair_experiments",
+                            "Spherical_0.01_9_pair_experiments",
+                            "Spherical_0.01_12_pair_experiments"
+                            # "Spherical_0.1_experiments",
+                            # "Spherical_0.3_experiments"
+                            ]
         for exp_name in experiment_names:
 
             if args.k + seed > 200:

@@ -74,6 +74,8 @@ def run_experiment(
         "output_dim"
     ]
 
+    CONFIG_NUMBER_PAIRS = CONFIG_DICT[experiment_name]["number_pairs"]
+
     CONFIG_SHIFT_PARAMETER = CONFIG_DICT[experiment_name][
         "shift_parameter"
     ]
@@ -135,6 +137,7 @@ def run_experiment(
         num_scalarizations=CONFIG_NUMBER_OF_SCALARIZATIONS,
         lb=lb,
         ub=ub,
+        n_pairs=CONFIG_NUMBER_PAIRS,
         n_init=CONFIG_NUMBER_INITAL_DESIGN,  # n_init,
         n_max=CONFIG_MAX_NUM_EVALUATIONS,  # n_max,
         kernel_str="Matern",

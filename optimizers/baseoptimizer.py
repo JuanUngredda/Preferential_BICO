@@ -43,6 +43,7 @@ class BaseOptimizer(ABC):
             ub: Tensor,
             n_max: int,
             n_init: int = 20,
+            n_pairs: int=0,
             ns0: int = None,
     ):
         """
@@ -63,6 +64,7 @@ class BaseOptimizer(ABC):
         else:
             self.ns0 = ns0
         self.n_init = n_init
+        self.n_pairs = n_pairs
         self.n_max = n_max
         self.f = fun
         self.lb = lb.squeeze(-1)
@@ -84,8 +86,6 @@ class BaseOptimizer(ABC):
         logger.info(f"Starting optim, n_init: {self.n_init}")
 
         # initial random dataset
-        # todo: allow for initial random pairs sampling
-
         self.y_train_option_1 = torch.zeros((0, self.dim))
         self.y_train_option_2 = torch.zeros((0, self.dim))
         self.index_pairs_sampled = []
@@ -106,20 +106,13 @@ class BaseOptimizer(ABC):
         num_sim = 0
         num_dm = 0
         # start iterating until the budget is exhausted.
-        for _ in range(self.n_max - self.n_init):
+        # print("range(self.n_max - self.n_init)",range(self.n_max - self.n_init))
+        for it in range(self.n_max - self.n_init):
 
-            import time
-            # collect next points
-            # ts = time.time()
             x_new, voi_sim = self.get_next_point_simulator()
-            # te = time.time()
-            # print("time sim acq", te-ts)
-            # ts= time.time()
-            pair_new_idx, pair_new, voi_dm = self.get_next_point_decision_maker()
-            # te = time.time()
-            # print("time dm acq", te - ts, "true param", self.true_parameter )
-            print("x_new, voi_sim",x_new, voi_sim)
-            print("pair_new, voi_dm",pair_new_idx, voi_dm)
+
+            pair_new_idx, pair_new, voi_dm = self.get_next_point_decision_maker() # ([int, int], [Tensor, Tensor], float)
+
             # if voi simulator greater than dm then query simulator. Otherwise query the decision maker
             if voi_dm <= voi_sim:
                 num_sim +=1
@@ -141,7 +134,7 @@ class BaseOptimizer(ABC):
                 self.index_pairs_sampled.append(pair_new_idx)
                 self.decisions.append(0)
 
-            print("num_sim", num_sim, "num_dm", num_dm)
+
             logger.info(f"Running optim, n: {self.x_train.shape[0] + len(self.index_pairs_sampled)}")
 
             # test if necessary
@@ -149,6 +142,35 @@ class BaseOptimizer(ABC):
                 self.test()
                 logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
                 logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
+
+        # select final self.n_pairs pairs.
+
+        for it in range(self.n_pairs):
+                num_dm += 1
+
+                pair_new_idx, y_1, y_2 = self.select_random_non_dominated_pair()
+
+                if (y_1 is None) or (y_2 is None):
+                    self._update_preference_model()
+                    self.test()
+                    logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
+                    logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
+                    break
+
+                y_winner, y_loser = self.evaluate_decision_maker(option_1=y_1,
+                                                     option_2=y_2)
+
+                self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
+                self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
+                self.index_pairs_sampled.append(pair_new_idx)
+                self.decisions.append(0)
+
+                if it == range(self.n_pairs)[-1]:
+                    self._update_preference_model()
+                    self.test()
+                    logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
+                    logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
+        raise
 
     def evaluate_objective(self, x: Tensor, **kwargs) -> Tensor:
         """

@@ -29,6 +29,7 @@ class BaseBOOptimizer(BaseOptimizer):
             lb: Tensor,
             ub: Tensor,
             n_max: int,
+            n_pairs: int = 0,
             n_init: int = 20,
             optional: Optional[dict[str, int]] = None,
     ):
@@ -39,7 +40,7 @@ class BaseBOOptimizer(BaseOptimizer):
         """
 
         self.acquisition_fun = acquisitionfun
-        super().__init__(testfun, lb, ub, n_max, n_init, ns0=n_init)
+        super().__init__(testfun, lb, ub, n_max, n_init, n_pairs, ns0=n_init)
 
         if optional is None:
             self.optional = {

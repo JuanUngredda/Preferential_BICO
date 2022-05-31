@@ -10,6 +10,7 @@ from botorch.models.transforms.outcome import Standardize
 # from botorch.utils.multi_objective.scalarization import (
 #     get_chebyshev_scalarization
 # )
+from botorch.utils.multi_objective.pareto import is_non_dominated
 from .scalarization_functions.vectorised_scalarizations import get_chebyshev_scalarization
 from botorch.models import FixedNoiseGP, SingleTaskGP
 from botorch.utils.sampling import sample_simplex
@@ -41,6 +42,7 @@ class Optimizer(BaseBOOptimizer):
             num_scalarizations: int,
             n_max: int,
             n_init: int = 20,
+            n_pairs: int = 0,
             kernel_str: str = None,
             nz: int = 5,
             base_seed: Optional[int] = 0,
@@ -53,6 +55,7 @@ class Optimizer(BaseBOOptimizer):
             acquisitionfun,
             lb,
             ub,
+            n_pairs = n_pairs,
             n_max=n_max,
             n_init=n_init,
             optional=optional,
@@ -307,6 +310,55 @@ class Optimizer(BaseBOOptimizer):
             # plt.show()
             # raise
 
+    def select_random_non_dominated_pair(self):
+        # compute all possible pairs from sampled data
+        num_y_train = len(self.y_train)
+        y_train_idx = torch.arange(num_y_train)
+        pairs_idx = torch.combinations(y_train_idx, r=2)  # (num_possible_combinations, 2)
+
+        # check dominancy between pairs.
+        pairs_lst = []
+        pairs_idx_lst = []
+        for p in pairs_idx:
+            pair = self.y_train[p]  # [option_1 index, option_2 index]
+
+            non_dominated_individual_options = is_non_dominated(Y=pair)
+            if torch.sum(non_dominated_individual_options) == 2:
+                pairs_lst.append(pair)
+                pairs_idx_lst.append(p)
+
+
+        # Filter already sampled pairs
+        unsampled_pairs_lst = []
+        unsampled_pairs_idx_lst = []
+
+        for i, pairs_idx in enumerate(pairs_idx_lst):
+            include = True
+            for j, sampled_pairs in enumerate(self.index_pairs_sampled):
+
+                if torch.all(pairs_idx == sampled_pairs):
+                    include = False
+
+            if include:
+                pair = self.y_train[pairs_idx]
+                unsampled_pairs_lst.append(pair)
+                unsampled_pairs_idx_lst.append(pairs_idx)
+
+        # random pair selection
+        if len(unsampled_pairs_idx_lst) > 0:
+            pair_idx = torch.randint(low=0, high=len(unsampled_pairs_idx_lst), size=(1,1))
+
+            pair = unsampled_pairs_lst[pair_idx]
+            new_pair_idx = unsampled_pairs_idx_lst[pair_idx ]
+            y1 = pair[0]
+            y2 = pair[1]
+
+        else:
+            y1 = None
+            y2 = None
+
+        return new_pair_idx, y1, y2
+
     def save(self):
         # save the output
 
@@ -371,7 +423,7 @@ class Optimizer(BaseBOOptimizer):
         )
 
         # generate initialisation points
-        X_random_initial_conditions_raw = torch.rand((self.optional["RAW_SAMPLES"], self.dim))
+        X_random_initial_conditions_raw = torch.rand((1000, self.dim))
         X_sampled = self.x_train
 
         # print(x_GP_rec.shape, X_random_initial_conditions_raw.shape, X_sampled.shape)
@@ -396,7 +448,7 @@ class Optimizer(BaseBOOptimizer):
             bounds=bounds_normalized,
             q=1,
             batch_initial_conditions=X_initial_conditions,
-            num_restarts=self.optional["NUM_RESTARTS"])
+            num_restarts=5)
 
         x_best = X_optimised[torch.argmax(X_optimised_vals.squeeze())]
         x_value = torch.max(X_optimised_vals.squeeze())
@@ -443,6 +495,7 @@ class Optimizer(BaseBOOptimizer):
         #                 )
         #
         #     plt.show()
+        # raise
         return x_best, x_value
 
     def test(self):
@@ -452,11 +505,15 @@ class Optimizer(BaseBOOptimizer):
         x_rec = self.policy()
         self.x_recommended = x_rec
 
-        expectedutilityfunction = self.ExpectedUtilityFunction(utility_model=self.utility_model,
-                                                               weights=self.true_parameter)
 
-        true_sampled_utility = expectedutilityfunction(torch.atleast_2d(self.x_train[-1]))
-        true_recommended_utility = expectedutilityfunction(torch.atleast_2d(x_rec))
+        def objective(X):
+            utility = self.utility_model(weights=self.true_parameter, Y=self.utility_normalizing_vectors_true_fun)
+            objective_values = self.evaluate_objective(X)
+            uvals = utility(objective_values )
+            return uvals
+
+        true_sampled_utility = torch.max(objective(self.x_train))
+        true_recommended_utility = objective(torch.atleast_2d(x_rec))
 
         _, true_best_utility = self. _optimize_true_underlying_performance(true_weight=self.true_parameter)
         n = len(self.y_train) * 1.0
