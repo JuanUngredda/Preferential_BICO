@@ -57,7 +57,14 @@ def run(args):
                             "Spherical_0.1_3_pair_experiments",
                             "Spherical_0.1_6_pair_experiments",
                             "Spherical_0.1_9_pair_experiments",
-                            "Spherical_0.1_12_pair_experiments"
+                            "Spherical_0.1_12_pair_experiments",
+
+                            "Spherical_0.3_Interactive_experiments",
+                            "Spherical_0.3_0_pair_experiments",
+                            "Spherical_0.3_3_pair_experiments",
+                            "Spherical_0.3_6_pair_experiments",
+                            "Spherical_0.3_9_pair_experiments",
+                            "Spherical_0.3_12_pair_experiments"
                             # "Spherical_0.1_experiments",
                             # "Spherical_0.3_experiments"
                             ]
