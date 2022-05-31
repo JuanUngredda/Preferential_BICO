@@ -183,7 +183,7 @@ def run_experiment(
     }
 
     if os.path.isdir(savefile) == False:
-        os.makedirs(savefile)
+        os.makedirs(savefile, exist_ok=True)
 
     with open(savefile + "/" + str(base_seed) + ".pkl", "wb") as f:
         pkl.dump(output, f)

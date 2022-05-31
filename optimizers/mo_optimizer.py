@@ -395,7 +395,7 @@ class Optimizer(BaseBOOptimizer):
 
         if self.save_folder is not None:
             if os.path.isdir(self.save_folder) == False:
-                os.makedirs(self.save_folder)
+                os.makedirs(self.save_folder, exist_ok=True)
 
             with open(self.save_folder + "/" + str(self.base_seed) + ".pkl", "wb") as f:
                 pkl.dump(output, f)
