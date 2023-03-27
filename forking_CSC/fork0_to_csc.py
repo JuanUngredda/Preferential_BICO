@@ -134,7 +134,7 @@ ALL_CSC_NAMES = [
 # U = [0,2,3,4,5,6,7,8]
 # python fork0_to_csc.py /home/rawsys/matjiu/Preferential_BICO/csc_control.py 9 --first_fork kumeta --basedir /home/rawsys/matjiu/RESULTS_Preferential_BICO --conda Preferential_BICO
 
-U = [0,1,2,4,6,8]#range(len(ALL_CSC_NAMES))#[3, 4, 5, 8, 9, 10, 11]
+U = [0,1,2,4,6]#range(len(ALL_CSC_NAMES))#[3, 4, 5, 8, 9, 10, 11]
 
 CSC_NAMES = [ALL_CSC_NAMES[i] for i in U]
 
