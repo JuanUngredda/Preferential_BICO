@@ -79,7 +79,7 @@ def run(args):
 
             mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
             # print(args.k + seed, exp_name)
-        seed += number_of_csc_machines
+        seed += 1
 
     # end of demo
     print("\nOutput saved to file: ", this_job_savefile, "\n\n\n\n")
