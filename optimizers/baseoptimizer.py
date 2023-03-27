@@ -107,15 +107,17 @@ class BaseOptimizer(ABC):
         num_dm = 0
         # start iterating until the budget is exhausted.
         # print("range(self.n_max - self.n_init)",range(self.n_max - self.n_init))
+        schedule_dm_sampling = torch.linspace(start=0, end=self.n_max - self.n_init- 1, steps=self.n_pairs, dtype=torch.int)
         for it in range(self.n_max - self.n_init):
 
-            x_new, voi_sim = self.get_next_point_simulator()
-
-            pair_new_idx, pair_new, voi_dm = self.get_next_point_decision_maker() # ([int, int], [Tensor, Tensor], float)
 
             # if voi simulator greater than dm then query simulator. Otherwise query the decision maker
-            if voi_dm <= voi_sim:
+            if it in schedule_dm_sampling:
+                num_dm += 1
+                self.random_pairs_evaluation_dm(n_pairs=1)
+            else:
                 num_sim +=1
+                x_new, voi_sim = self.get_next_point_simulator()
                 x_new = x_new.to(dtype=torch.double)
                 y_new = self.evaluate_objective(x_new).to(dtype=torch.double)
 
@@ -123,17 +125,6 @@ class BaseOptimizer(ABC):
                 self.x_train = torch.vstack([self.x_train, x_new.reshape(1, -1)])
                 self.y_train = torch.vstack((self.y_train, y_new))
                 self.decisions.append(1)
-            else:
-                num_dm += 1
-                y_1, y_2 = pair_new
-                y_winner, y_loser = self.evaluate_decision_maker(option_1=y_1,
-                                                     option_2=y_2)
-
-                self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
-                self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
-                self.index_pairs_sampled.append(pair_new_idx)
-                self.decisions.append(0)
-
 
             logger.info(f"Running optim, n: {self.x_train.shape[0] + len(self.index_pairs_sampled)}")
 
@@ -145,9 +136,8 @@ class BaseOptimizer(ABC):
 
         # select final self.n_pairs pairs.
 
-        for it in range(self.n_pairs):
-                num_dm += 1
-
+    def random_pairs_evaluation_dm(self, n_pairs):
+        for it in range(n_pairs):
                 pair_new_idx, y_1, y_2 = self.select_random_non_dominated_pair()
 
                 if (y_1 is None) or (y_2 is None):
@@ -165,7 +155,7 @@ class BaseOptimizer(ABC):
                 self.index_pairs_sampled.append(pair_new_idx)
                 self.decisions.append(0)
 
-                if it == range(self.n_pairs)[-1]:
+                if it == range(n_pairs)[-1]:
                     self._update_preference_model()
                     self.test()
                     logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])

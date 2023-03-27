@@ -354,6 +354,7 @@ class Optimizer(BaseBOOptimizer):
             y2 = pair[1]
 
         else:
+            new_pair_idx = None
             y1 = None
             y2 = None
 

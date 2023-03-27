@@ -52,21 +52,25 @@ def run(args):
     # print(number_of_csc_machines)
     seed = 0
     while True:
-        experiment_names = ["Spherical_0.1_Interactive_experiments",
+        experiment_names = [
+                            "Spherical_0.01_0_pair_experiments",
+                            "Spherical_0.01_3_pair_experiments",
+                            "Spherical_0.01_6_pair_experiments",
+                            "Spherical_0.01_9_pair_experiments",
+                            "Spherical_0.01_12_pair_experiments",
+
                             "Spherical_0.1_0_pair_experiments",
                             "Spherical_0.1_3_pair_experiments",
                             "Spherical_0.1_6_pair_experiments",
                             "Spherical_0.1_9_pair_experiments",
                             "Spherical_0.1_12_pair_experiments",
 
-                            "Spherical_0.3_Interactive_experiments",
                             "Spherical_0.3_0_pair_experiments",
                             "Spherical_0.3_3_pair_experiments",
                             "Spherical_0.3_6_pair_experiments",
                             "Spherical_0.3_9_pair_experiments",
                             "Spherical_0.3_12_pair_experiments"
-                            # "Spherical_0.1_experiments",
-                            # "Spherical_0.3_experiments"
+
                             ]
         for exp_name in experiment_names:
 
@@ -75,7 +79,7 @@ def run(args):
 
             mo_experiment_manager.main(exp_names=exp_name, seed=args.k + seed)
             # print(args.k + seed, exp_name)
-        seed += number_of_csc_machines
+        seed += 1
 
     # end of demo
     print("\nOutput saved to file: ", this_job_savefile, "\n\n\n\n")
