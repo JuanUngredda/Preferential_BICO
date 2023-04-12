@@ -176,11 +176,21 @@ class BaseBOOptimizer(BaseOptimizer):
 
         """
 
+        unsampled_pairs_idx_lst, unsampled_pairs_lst = self.sample_filtering()
+
+        # Compute best pair.
+        if len(unsampled_pairs_lst)==0:
+            return [torch.Tensor([])],  [torch.Tensor([]), torch.Tensor([])], -torch.inf
+
+        best_pair_idx, best_pair, voi_dm = acq_fun.find_best_pair(pairs=unsampled_pairs_lst,
+                                                                  pairs_idx=unsampled_pairs_idx_lst)
+        return best_pair_idx, best_pair, voi_dm
+
+    def sample_filtering(self):
         # compute all possible pairs from sampled data
         num_y_train = len(self.y_train)
         y_train_idx = torch.arange(num_y_train)
         pairs_idx = torch.combinations(y_train_idx, r=2)  # (num_possible_combinations, 2)
-
         # check dominancy between pairs.
         pairs_lst = []
         pairs_idx_lst = []
@@ -191,12 +201,9 @@ class BaseBOOptimizer(BaseOptimizer):
             if torch.sum(non_dominated_individual_options) == 2:
                 pairs_lst.append(pair)
                 pairs_idx_lst.append(p)
-
-
         # Filter already sampled pairs
         unsampled_pairs_lst = []
         unsampled_pairs_idx_lst = []
-
         for i, pairs_idx in enumerate(pairs_idx_lst):
             include = True
             for j, sampled_pairs in enumerate(self.index_pairs_sampled):
@@ -208,12 +215,6 @@ class BaseBOOptimizer(BaseOptimizer):
                 pair = self.y_train[pairs_idx]
                 unsampled_pairs_lst.append(pair)
                 unsampled_pairs_idx_lst.append(pairs_idx)
+        return unsampled_pairs_idx_lst, unsampled_pairs_lst
 
 
-        # Compute best pair.
-        if len(unsampled_pairs_lst)==0:
-            return [torch.Tensor([])],  [torch.Tensor([]), torch.Tensor([])], -torch.inf
-
-        best_pair_idx, best_pair, voi_dm = acq_fun.find_best_pair(pairs=unsampled_pairs_lst,
-                                                                  pairs_idx=unsampled_pairs_idx_lst)
-        return best_pair_idx, best_pair, voi_dm

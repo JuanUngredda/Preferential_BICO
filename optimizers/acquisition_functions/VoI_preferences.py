@@ -39,7 +39,6 @@ def check_parameter(utility_model: Callable,
     utility_option_1 = utility_model(winner_tensor)
     utility_option_2 = utility_model(loser_tensor)
 
-
     # winner tensor must be greater than loser tensor for all instances.
     num_simulated_winning_instances = torch.sum(utility_option_1 > utility_option_2)
     num_actual_winning_instances = len(winner_tensor)
@@ -149,6 +148,7 @@ class AcquisitionFunctionDecisionMaker(MCAcquisitionFunction):
 
         return KG
 
+
     def find_best_pair(self, pairs: list, pairs_idx: list) -> Tuple[Tensor, Tensor, Tensor]:
 
         KG = torch.zeros(len(pairs))
@@ -221,7 +221,6 @@ class AcquisitionFunctionDecisionMaker(MCAcquisitionFunction):
         # generate initialisation points
         X_random_initial_conditions_raw = torch.rand((self.optional["RAW_SAMPLES"], dim))
         X_sampled = self.model.train_inputs[0][0].squeeze()
-
 
         X_initial_conditions_raw = torch.concat([X_random_initial_conditions_raw, X_sampled])
         X_initial_conditions_raw = X_initial_conditions_raw.unsqueeze(dim=-2)

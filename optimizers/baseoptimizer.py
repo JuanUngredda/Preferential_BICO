@@ -80,16 +80,15 @@ class BaseOptimizer(ABC):
             torch.linspace(n_init, n_max, steps=31, dtype=int)
         )
         logger.info("Testable iters: %s", self.testable_iters)
-
-    def optimize(self):
-
-        logger.info(f"Starting optim, n_init: {self.n_init}")
-
         # initial random dataset
         self.y_train_option_1 = torch.zeros((0, self.dim))
         self.y_train_option_2 = torch.zeros((0, self.dim))
         self.index_pairs_sampled = []
         self.decisions = []
+
+    def optimize(self):
+
+        logger.info(f"Starting optim, n_init: {self.n_init}")
 
         self.x_train = lhc(n=self.n_init, dim=self.dim).to(dtype=torch.double)
         self.y_train = torch.vstack(
@@ -147,13 +146,7 @@ class BaseOptimizer(ABC):
                     logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
                     break
 
-                y_winner, y_loser = self.evaluate_decision_maker(option_1=y_1,
-                                                     option_2=y_2)
-
-                self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
-                self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
-                self.index_pairs_sampled.append(pair_new_idx)
-                self.decisions.append(0)
+                self.elicit_info_from_dm(pair_new_idx, y_1, y_2)
 
                 if it == range(n_pairs)[-1]:
                     self._update_preference_model()
@@ -161,6 +154,13 @@ class BaseOptimizer(ABC):
                     logger.info("Test GP performance:\n %s", self.GP_performance[-1, :])
                     logger.info("Test sampled performance:\n %s", self.sampled_performance[-1, :])
 
+    def elicit_info_from_dm(self, pair_new_idx, y_1, y_2):
+        y_winner, y_loser = self.evaluate_decision_maker(option_1=y_1,
+                                                         option_2=y_2)
+        self.y_train_option_1 = torch.vstack([self.y_train_option_1, y_winner.reshape(1, -1)])
+        self.y_train_option_2 = torch.vstack([self.y_train_option_2, y_loser.reshape(1, -1)])
+        self.index_pairs_sampled.append(pair_new_idx)
+        self.decisions.append(0)
 
     def evaluate_objective(self, x: Tensor, **kwargs) -> Tensor:
         """
